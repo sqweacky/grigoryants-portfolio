@@ -211,6 +211,10 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:36px 36px
   .ir.full{grid-column:1}
   .cg{grid-template-columns:1fr}
   .foot-in{flex-direction:column;text-align:center}
+
+  /* Кастомный курсор только на ПК */
+  body { cursor: auto !important; }
+  #cd, #cr { display: none !important; }
 }
 @media(max-width:480px){
   .hero{padding:80px 20px 50px}.container{padding:0 20px}
@@ -582,16 +586,20 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:36px 36px
 </footer>
 
 <script>
-/* CURSOR */
-const cd=document.getElementById('cd'),cr=document.getElementById('cr');
-let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
-(function tick(){
-  rx+=(mx-rx)*.13;ry+=(my-ry)*.13;
-  cd.style.left=mx+'px';cd.style.top=my+'px';
-  cr.style.left=rx+'px';cr.style.top=ry+'px';
-  requestAnimationFrame(tick);
-})();
+/* CURSOR — только для ПК (на телефонах и планшетах отключён) */
+if (window.innerWidth > 880 || !('ontouchstart' in window)) {
+  const cd=document.getElementById('cd'),cr=document.getElementById('cr');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+  (function tick(){
+    rx+=(mx-rx)*.13;ry+=(my-ry)*.13;
+    if (cd && cr) {
+      cd.style.left=mx+'px';cd.style.top=my+'px';
+      cr.style.left=rx+'px';cr.style.top=ry+'px';
+    }
+    requestAnimationFrame(tick);
+  })();
+}
 document.querySelectorAll('a,button,.cc,.fb,.frame,.chip').forEach(el=>{
   el.addEventListener('mouseenter',()=>document.body.classList.add('hover'));
   el.addEventListener('mouseleave',()=>document.body.classList.remove('hover'));
@@ -631,20 +639,33 @@ function navAct(){
 
 /* Функции подсветки (улучшенные) */
 function goToAbout(highlightText) {
-  const section = document.getElementById('about');
-  if (!section) return;
-  const y = section.getBoundingClientRect().top + window.scrollY - 80;
-  window.scrollTo({ top: y, behavior: 'smooth' });
-  setTimeout(() => {
-    document.querySelectorAll('.ir').forEach(ir => {
-      ir.style.boxShadow = '';
-      if (ir.textContent.includes(highlightText)) {
-        ir.style.transition = 'box-shadow .3s';
-        ir.style.boxShadow = '0 0 0 3px var(--gold), 0 0 28px var(--goldG)';
-        setTimeout(() => { ir.style.boxShadow = ''; }, 2400);
-      }
-    });
-  }, 700);
+  // Находим именно ту карточку, к которой прикреплён значок
+  let targetCard = null;
+  document.querySelectorAll('.ir').forEach(ir => {
+    if (ir.textContent.includes(highlightText)) {
+      targetCard = ir;
+    }
+  });
+
+  if (targetCard) {
+    // Прокручиваем ПРЯМО к карточке (а не к началу блока)
+    const y = targetCard.getBoundingClientRect().top + window.scrollY - 95;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+
+    // Подсветка после прокрутки
+    setTimeout(() => {
+      targetCard.style.transition = 'box-shadow .3s';
+      targetCard.style.boxShadow = '0 0 0 3px var(--gold), 0 0 28px var(--goldG)';
+      setTimeout(() => { targetCard.style.boxShadow = ''; }, 2400);
+    }, 650);
+  } else {
+    // fallback — если вдруг не нашли
+    const section = document.getElementById('about');
+    if (section) {
+      const y = section.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  }
 }
 
 function goToContact() {
